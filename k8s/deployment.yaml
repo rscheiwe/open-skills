@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-skills
+  labels:
+    app: open-skills
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: open-skills
+  template:
+    metadata:
+      labels:
+        app: open-skills
+    spec:
+      containers:
+      - name: api
+        image: open-skills:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: POSTGRES_URL
+          valueFrom:
+            secretKeyRef:
+              name: open-skills-secrets
+              key: postgres-url
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: open-skills-secrets
+              key: openai-api-key
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: open-skills-secrets
+              key: jwt-secret
+        - name: STORAGE_ROOT
+          value: "/app/storage"
+        - name: ARTIFACTS_ROOT
+          value: "/app/artifacts"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: LOG_FORMAT
+          value: "json"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: storage
+          mountPath: /app/storage
+        - name: artifacts
+          mountPath: /app/artifacts
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: open-skills-storage
+      - name: artifacts
+        persistentVolumeClaim:
+          claimName: open-skills-artifacts

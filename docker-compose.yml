@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: open-skills-postgres
+    environment:
+      POSTGRES_DB: openskills
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # open-skills API server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: open-skills-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Application
+      ENVIRONMENT: development
+      DEBUG: "false"
+
+      # Database
+      POSTGRES_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/openskills
+
+      # OpenAI (replace with your key)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-key-here}
+
+      # Security
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+
+      # Storage
+      STORAGE_ROOT: /app/storage
+      ARTIFACTS_ROOT: /app/artifacts
+
+      # Server
+      HOST: 0.0.0.0
+      PORT: 8000
+
+      # Logging
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+    ports:
+      - "8000:8000"
+    volumes:
+      - skill_storage:/app/storage
+      - skill_artifacts:/app/artifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/health', timeout=5.0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Adminer for database management (optional)
+  adminer:
+    image: adminer:latest
+    container_name: open-skills-adminer
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+  skill_storage:
+  skill_artifacts:
+
+networks:
+  default:
+    name: open-skills-network

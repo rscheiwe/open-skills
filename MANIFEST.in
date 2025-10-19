@@ -1,0 +1,37 @@
+# Include documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include QUICKSTART.md
+include INTEGRATION_GUIDE.md
+include MIGRATION_GUIDE.md
+include REFACTOR_SUMMARY.md
+
+# Include specification documents
+recursive-include SPEC *.md
+
+# Include database migrations
+recursive-include open_skills/db/migrations *.py
+recursive-include open_skills/db/migrations *.ini
+recursive-include open_skills/db/migrations *.mako
+
+# Exclude unnecessary files
+exclude .env
+exclude .env.example
+exclude docker-compose.yml
+exclude Dockerfile
+exclude .gitignore
+exclude .dockerignore
+
+# Exclude development files
+recursive-exclude tests *
+recursive-exclude examples *
+recursive-exclude web *
+recursive-exclude k8s *
+recursive-exclude .github *
+
+# Exclude Python cache
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *$py.class
+global-exclude .DS_Store

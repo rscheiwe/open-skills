@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open-Skills Streaming Example</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1 {
+            color: #4ec9b0;
+            border-bottom: 2px solid #4ec9b0;
+            padding-bottom: 10px;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 5px;
+        }
+        input, button {
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        input {
+            background: #3c3c3c;
+            border: 1px solid #4ec9b0;
+            color: #d4d4d4;
+            border-radius: 3px;
+            width: 300px;
+        }
+        button {
+            background: #4ec9b0;
+            border: none;
+            color: #1e1e1e;
+            cursor: pointer;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #6ed9c0;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        #events {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .event {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #4ec9b0;
+            padding-left: 10px;
+        }
+        .event.status { border-left-color: #569cd6; }
+        .event.log { border-left-color: #d4d4d4; }
+        .event.output { border-left-color: #4ec9b0; }
+        .event.artifact { border-left-color: #c586c0; }
+        .event.error { border-left-color: #f48771; }
+        .event.complete { border-left-color: #b5cea8; font-weight: bold; }
+        .timestamp {
+            color: #858585;
+            font-size: 11px;
+            margin-right: 10px;
+        }
+        .event-type {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .status { color: #569cd6; }
+        .log { color: #d4d4d4; }
+        .output { color: #4ec9b0; }
+        .artifact { color: #c586c0; }
+        .error { color: #f48771; }
+        .complete { color: #b5cea8; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Open-Skills Streaming</h1>
+
+    <div class="controls">
+        <div>
+            <label for="runId">Run ID:</label>
+            <input type="text" id="runId" placeholder="Enter run ID to stream...">
+            <button onclick="startStreaming()" id="startBtn">Start Streaming</button>
+            <button onclick="stopStreaming()" id="stopBtn" disabled>Stop</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <button onclick="clearEvents()">Clear Events</button>
+        </div>
+    </div>
+
+    <div id="events">
+        <div style="color: #858585;">Events will appear here...</div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        const eventsDiv = document.getElementById('events');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const runIdInput = document.getElementById('runId');
+
+        function addEvent(type, data) {
+            const timestamp = new Date().toLocaleTimeString();
+            const eventDiv = document.createElement('div');
+            eventDiv.className = `event ${type}`;
+
+            let message = '';
+
+            switch(type) {
+                case 'status':
+                    message = `Status: ${data.status}`;
+                    break;
+                case 'log':
+                    message = `[${data.stream}] ${data.line}`;
+                    break;
+                case 'output':
+                    message = `Output: ${data.key} = ${JSON.stringify(data.value)}`;
+                    break;
+                case 'artifact':
+                    const sizeKb = (data.size_bytes / 1024).toFixed(2);
+                    message = `Artifact: ${data.filename} (${sizeKb} KB)`;
+                    break;
+                case 'error':
+                    message = `Error: ${data.error}`;
+                    if (data.traceback) {
+                        message += `\n   ${data.traceback.substring(0, 200)}...`;
+                    }
+                    break;
+                case 'complete':
+                    message = `✅ Completed in ${data.duration_ms}ms`;
+                    message += `\n   Status: ${data.status}`;
+                    message += `\n   Outputs: ${JSON.stringify(data.outputs, null, 2)}`;
+                    break;
+                case 'keepalive':
+                    return; // Don't show keepalive events
+            }
+
+            eventDiv.innerHTML = `
+                <span class="timestamp">${timestamp}</span>
+                <span class="event-type ${type}">[${type.toUpperCase()}]</span>
+                <span>${message.replace(/\n/g, '<br>')}</span>
+            `;
+
+            eventsDiv.appendChild(eventDiv);
+            eventsDiv.scrollTop = eventsDiv.scrollHeight;
+        }
+
+        function startStreaming() {
+            const runId = runIdInput.value.trim();
+            if (!runId) {
+                alert('Please enter a run ID');
+                return;
+            }
+
+            // Close existing connection
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // Clear previous events
+            clearEvents();
+
+            // Create new EventSource
+            const url = `http://localhost:8000/api/runs/${runId}/stream`;
+            addEvent('status', { status: 'Connecting to ' + url });
+
+            eventSource = new EventSource(url);
+
+            // Handle different event types
+            ['status', 'log', 'output', 'artifact', 'error', 'complete'].forEach(type => {
+                eventSource.addEventListener(type, (e) => {
+                    const data = JSON.parse(e.data);
+                    addEvent(type, data);
+
+                    if (type === 'complete' || type === 'error') {
+                        stopStreaming();
+                    }
+                });
+            });
+
+            eventSource.addEventListener('keepalive', () => {
+                // Keepalive received (no visual feedback needed)
+            });
+
+            eventSource.onerror = (e) => {
+                console.error('EventSource error:', e);
+                addEvent('error', { error: 'Connection error or run not found' });
+                stopStreaming();
+            };
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        }
+
+        function stopStreaming() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+                addEvent('status', { status: 'Disconnected' });
+            }
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        function clearEvents() {
+            eventsDiv.innerHTML = '';
+        }
+
+        // Example: Auto-populate from URL query param
+        const urlParams = new URLSearchParams(window.location.search);
+        const runIdParam = urlParams.get('run_id');
+        if (runIdParam) {
+            runIdInput.value = runIdParam;
+        }
+    </script>
+</body>
+</html>

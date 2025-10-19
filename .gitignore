@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node (web console)
+node_modules/
+web/dist/
+web/build/
+web/.vite/
+
+# Skill bundles storage
+storage/
+artifacts/
+
+# Alembic
+# Don't ignore migrations folder, but ignore version files during dev
+# alembic/versions/*.py
+
+# PyPI Publishing
+.pypirc
+*.tar.gz
+*.whl
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LLM
+SPEC/
