@@ -1,5 +1,9 @@
 # open-skills
 
+[![PyPI version](https://badge.fury.io/py/open-skills.svg)](https://pypi.org/project/open-skills/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **A framework-agnostic Skills subsystem for Python agents.** Build, version, and execute reusable agent capabilities as code bundles — embed directly in your app or deploy as a service.
 
 > Inspired by [Anthropic's Skills](https://www.anthropic.com/) feature for Claude.
