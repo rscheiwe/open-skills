@@ -13,14 +13,23 @@
 ### Key Features
 
 ✅ **Framework-Agnostic** — Works with OpenAI, Anthropic, LangChain, LlamaIndex, or custom agents
+
 ✅ **Two Deployment Modes** — Library (embedded) or Service (microservice)
+
 ✅ **Auto-Discovery** — Skills registered from folder structure at startup
+
 ✅ **Context-Aware Prompts** — Automatic skill injection into system prompts
+
 ✅ **Versioned Bundles** — Skills as folders with metadata, scripts, and resources
+
 ✅ **Embedding-Based Search** — Automatic skill selection via vector similarity
+
 ✅ **Tool Manifest** — Standard `.well-known/skills.json` for any LLM framework
+
 ✅ **Real-Time Streaming** — SSE for execution updates
+
 ✅ **Artifact Generation** — File outputs with S3-compatible storage
+
 ✅ **Multi-Skill Composition** — Chain or parallelize execution
 
 ## Quick Start
